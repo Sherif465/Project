@@ -1,0 +1,24 @@
+<a href="/"> <h1>LOGO</h1></a>
+<form method="GET" action="{% url 'home' %}">
+    {% comment %} name must be as the name of the variable 
+    of the search function in views like this search example 
+    q = request.GET.get('q') if request.GET.get('q') != None else ''
+    # ******************************
+    # To get the rooms that have the topic name that contains the q
+    # and if q is empty then get all the rooms
+    rooms = Room.objects.filter(
+        Q(topic__name__icontains=q) |
+        Q(name__icontains=q) |
+        Q(description__icontains=q)
+        )
+    {% endcomment %}
+    <input type="text" name="q" placeholder="Search Rooms...">
+</form>
+{% if request.user.is_authenticated %}
+<p>Hello {{request.user}}</p>
+<a href="{% url 'logout' %}">Logout</a>
+{% else %}
+<a href="{% url 'login' %}">Login</a>
+{% endif %}
+
+<hr>
