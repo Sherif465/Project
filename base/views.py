@@ -78,15 +78,17 @@ def home(request):
 def room(request,pk): 
     room = Room.objects.get(id=pk)
     # to get child attributes of the room we type ******room.childAttribute_set.all()******
-    room_messages = room.message_set.all().order_by('-created') # to get all the messages of that room
+    room_messages = room.message_set.all().order_by('-created') # to get all the messages of that room /**_set.all()** mostly used in 1 to many relationships
+    participants = room.participants.all() # to get all the participants in the room /**.all()** mostly used in many to many relationships
     if request.method == 'POST': # to check if the user is sending a message
         message = Message.objects.create( # to create a message
             user = request.user, # to get the user that is sending the message
             room = room, # to get the room that the message is sent in
             body = request.POST.get('body') # to get the message body
         )
+        room.participants.add(request.user) # to add the user to the participants of the room
         return redirect('room',pk=room.id) # to redirect to the same page in order to refresh the page to prevent the message from being sent multiple times
-    context = {'room':room , 'room_messages':room_messages}
+    context = {'room':room , 'room_messages':room_messages , 'participants':participants}
     return render(request,'base/room.html',context) 
 
 # @login_required is used to check if the user is logged in or not
@@ -133,3 +135,14 @@ def deleteRoom(request,pk):
         room.delete()
         return redirect('home')
     return render(request,'base/delete.html',{'obj':room})
+
+
+@login_required(login_url='login')
+def deleteMessage(request,pk):
+    message = Message.objects.get(id=pk)
+    if request.user != message.user :
+        return HttpResponse('You are not allowed here')
+    if request.method == 'POST':
+        message.delete()
+        return redirect('home')
+    return render(request,'base/delete.html',{'obj':message})
