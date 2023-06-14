@@ -107,14 +107,19 @@ def userProfile(request,pk):
 @login_required(login_url='login')
 def createRoom(request):
     form = RoomForm()
+    topics = Topic.objects.all()
     if request.method == 'POST':
-        form = RoomForm(request.POST)
-        if form.is_valid():
-            room = form.save(commit=False) # to not save the room yet / to access the room object / making an instance of the room
-            room.host = request.user # to get the user that is creating the room
-            room.save()
-            return redirect('home')
-    context={'form':form}
+        topic_name = request.POST.get('topic')
+        # to get the topic if it exists or create it if it doesn't
+        topic, created = Topic.objects.get_or_create(name=topic_name) 
+        Room.objects.create(
+            host = request.user,
+            topic = topic,
+            name = request.POST.get('name'), # to get the name of the room
+            description = request.POST.get('description')
+        ) 
+        return redirect('home')
+    context={'form':form,'topics':topics}
     return render(request,'base/room_form.html',context)
 
 
@@ -126,15 +131,23 @@ def updateRoom(request,pk):
     form = RoomForm(instance=room)
     # to check if the user is the host of the room or not
     # in order to prevent someone else from editing the room
+    topics = Topic.objects.all()
+    
     if request.user != room.host :
         return HttpResponse('You are not allowed here')
     if request.method == 'POST':
-        # adding our data to the form of that room
-        form = RoomForm(request.POST,instance=room)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-    context = {'form':form}
+        
+        topic_name = request.POST.get('topic')
+        # to get the topic if it exists or create it if it doesn't
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+        room.name = request.POST.get('name') # adding our data to the form of that room
+        # to get the topic if it exists or create it if it doesn't
+        room.topic = topic 
+        
+        room.description = request.POST.get('description') # adding our data to the form of that room
+        room.save()
+        return redirect('home')
+    context = {'form':form, 'topics':topics, 'room':room}
     return render(request,'base/room_form.html',context)
 
 
